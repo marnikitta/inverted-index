@@ -34,7 +34,10 @@ public final class FileIndexer {
         int start = 0;
         while (this.buffer.hasRemaining()) {
           final byte current = this.buffer.get();
-          if (!this.isValidChar(current)) {
+
+          if (FileIndexer.isValidChar(current)) {
+            this.buffer.put(this.buffer.position() - 1, current >= 'A' && current <= 'Z' ? (byte) (current - (byte) 'A' + (byte) 'a') : current);
+          } else {
             final int pos = this.buffer.position() - 1;
             if (pos > start && pos - start < 100) {
               this.slice.limit(pos).position(start);
@@ -42,8 +45,6 @@ public final class FileIndexer {
               this.index.index(word, docId, position + start);
             }
             start = pos + 1;
-          } else {
-            this.buffer.put(this.buffer.position() - 1, current >= 'A' && current <= 'Z' ? (byte) (current - (byte) 'A' + (byte) 'a') : current);
           }
         }
 
@@ -51,12 +52,8 @@ public final class FileIndexer {
       }
     }
   }
-  //this.indexChunk.spill(
-  //        FileChannel.open(Paths.get("1.vcb"), StandardOpenOption.CREATE, StandardOpenOption.WRITE),
-  //        FileChannel.open(Paths.get("1.pst"), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
-  //);
 
-  private boolean isValidChar(byte current) {
+  private static boolean isValidChar(byte current) {
     return current >= 'a' && current <= 'z' || current >= 'A' && current <= 'Z';
   }
 }

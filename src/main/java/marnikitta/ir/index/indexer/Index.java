@@ -2,6 +2,7 @@ package marnikitta.ir.index.indexer;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ public final class Index {
     try (FileChannel vocab = FileChannel.open(vocabPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
          FileChannel posting = FileChannel.open(postingPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
       System.out.println("Spilling: " + System.currentTimeMillis());
-      new ChunkSpiller(this.currentIndex).spill(vocab, posting);
+      final Vocabulary vocabulary = SpilledPosting.spillPostings(this.currentIndex, posting);
+      vocabulary.spill(vocab, StandardCharsets.UTF_8.newEncoder());
       System.out.println("Spilling done: " + System.currentTimeMillis());
     }
 

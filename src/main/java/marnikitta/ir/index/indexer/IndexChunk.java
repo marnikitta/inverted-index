@@ -12,12 +12,12 @@ public final class IndexChunk {
 
   public void append(CharSequence word, int docId, int position) {
     final long encoding = this.encode(docId, position);
-    this.postings.compute(word, (w, p) -> this.appendToPosting(p, encoding));
+    this.postings.compute(word, (w, p) -> IndexChunk.appendToPosting(p, encoding));
 
     this.size++;
   }
 
-  private long[] appendToPosting(long[] posting, long newValue) {
+  private static long[] appendToPosting(long[] posting, long newValue) {
     final long[] actualPosting;
     if (posting == null) {
       actualPosting = new long[2];
