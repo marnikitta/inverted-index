@@ -1,4 +1,4 @@
-package marnikitta.ir.index;
+package marnikitta.ir.index.indexer;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +15,7 @@ public final class IndexApplication {
   }
 
   public static void main(String... args) throws IOException {
+    System.out.println("Starting: " + System.currentTimeMillis());
     final long start = System.currentTimeMillis();
     final Path root = Paths.get("");
 
@@ -23,6 +24,7 @@ public final class IndexApplication {
     }
     new IndexApplication(root).walkAndIndex();
     System.out.println(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - start));
+    System.out.println("Stopping: " + System.currentTimeMillis());
   }
 
   public void walkAndIndex() throws IOException {

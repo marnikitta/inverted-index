@@ -1,4 +1,6 @@
-package marnikitta.ir.index;
+package marnikitta.ir.index.indexer;
+
+import marnikitta.ir.index.DocIder;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -7,9 +9,10 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public final class FileIndexer {
-  private final Index index = new Index();
+  private final Index index = new Index(Paths.get(""));
   private final DocIder docIder = new DocIder();
 
   private final ByteBuffer buffer = ByteBuffer.allocateDirect(8192);
@@ -36,7 +39,7 @@ public final class FileIndexer {
             if (pos > start && pos - start < 100) {
               this.slice.limit(pos).position(start);
               final CharBuffer word = this.decoder.decode(this.slice);
-              this.index.append(word, docId, position + start);
+              this.index.index(word, docId, position + start);
             }
             start = pos + 1;
           } else {
@@ -48,7 +51,7 @@ public final class FileIndexer {
       }
     }
   }
-  //this.index.spill(
+  //this.indexChunk.spill(
   //        FileChannel.open(Paths.get("1.vcb"), StandardOpenOption.CREATE, StandardOpenOption.WRITE),
   //        FileChannel.open(Paths.get("1.pst"), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
   //);
