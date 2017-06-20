@@ -14,7 +14,7 @@ public final class PostingIterator {
   private final long offset;
 
   private boolean peeked = false;
-  private long peeeeeek = Long.MAX_VALUE;
+  private long peeeeeek = 0L;
 
   private int readCount = 0;
 
@@ -38,7 +38,7 @@ public final class PostingIterator {
       if (this.buffer.remaining() > 0) {
         this.readCount++;
         this.peeked = true;
-        this.peeeeeek = this.buffer.getLong();
+        this.peeeeeek += this.buffer.getLong();
         return this.peeeeeek;
       } else {
         this.buffer.compact();

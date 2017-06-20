@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public final class SpilledPosting {
   private static final byte DOCID_OFFSET = (byte) 32;
-  private static final long DOCID_MASK = ~((1L << SpilledPosting.DOCID_OFFSET) - 1);
+  private static final long DOCID_MASK = ~((1L << 32) - 1);
 
   private final FileChannel postingChannel;
 
@@ -23,26 +23,7 @@ public final class SpilledPosting {
     this.postingChannel = channel;
   }
 
-  public static Vocabulary spill(IndexChunk chunk, FileChannel channel) throws IOException {
-    final MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, (long) chunk.size() << 3);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    final LongBuffer lb = buffer.asLongBuffer();
-
-    final Map<CharSequence, PostingLocation> vocab = new HashMap<>(chunk.postings().size());
-
-    final long[] offset = {0};
-    chunk.postings().forEach((c, p) -> {
-      vocab.put(c, new PostingLocation(offset[0], p[0] << 3));
-      lb.put(p, 1, (int) p[0]);
-      offset[0] += p[0] << 3;
-    });
-
-    buffer.force();
-    return new Vocabulary(vocab);
-  }
-
   public Set<Integer> intersect(Collection<PostingLocation> locations, int limit) throws IOException {
-
     final List<PostingIterator> iterators = locations.stream().distinct()
             .map(l -> new PostingIterator(l, this.postingChannel)).collect(Collectors.toList());
 
@@ -78,6 +59,35 @@ public final class SpilledPosting {
     }
 
     return documents;
+  }
+
+  public static Vocabulary spill(IndexChunk chunk, FileChannel channel) throws IOException {
+    final MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, (long) chunk.size() << 3);
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    final LongBuffer lb = buffer.asLongBuffer();
+
+    final Map<CharSequence, PostingLocation> vocab = new HashMap<>(chunk.postings().size());
+
+    final long[] offset = {0};
+    chunk.postings().forEach((c, p) -> {
+      vocab.put(c, new PostingLocation(offset[0], p[0] << 3));
+      offset[0] += SpilledPosting.spillPosting(p, lb);
+    });
+
+    buffer.force();
+    return new Vocabulary(vocab);
+  }
+
+  private static long spillPosting(long[] posting, LongBuffer buffer) {
+    final int postingSize = (int) posting[0];
+    long prevEntry = 0;
+
+    for (int i = 1; i <= postingSize; ++i) {
+      buffer.put(posting[i] - prevEntry);
+      prevEntry = posting[i];
+    }
+
+    return (long) postingSize << 3;
   }
 
   public static int docIdOf(long encoding) {
