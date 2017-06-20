@@ -1,7 +1,9 @@
 package marnikitta.ir.index.indexer;
 
+import marnikitta.ir.index.encoder.PostingEncoder;
+
 import java.io.IOException;
-import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 public final class SpilledPosting {
   private static final byte DOCID_OFFSET = (byte) 32;
   private static final long DOCID_MASK = ~((1L << 32) - 1);
+  private static final PostingEncoder ENCODER = new PostingEncoder();
 
   private final FileChannel postingChannel;
 
@@ -63,31 +66,24 @@ public final class SpilledPosting {
 
   public static Vocabulary spill(IndexChunk chunk, FileChannel channel) throws IOException {
     final MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, (long) chunk.size() << 3);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    final LongBuffer lb = buffer.asLongBuffer();
 
     final Map<CharSequence, PostingLocation> vocab = new HashMap<>(chunk.postings().size());
 
     final long[] offset = {0};
     chunk.postings().forEach((c, p) -> {
-      vocab.put(c, new PostingLocation(offset[0], p[0] << 3));
-      offset[0] += SpilledPosting.spillPosting(p, lb);
+      final int written = SpilledPosting.spillPosting(p, buffer);
+      vocab.put(c, new PostingLocation(offset[0], written));
+      offset[0] += written;
     });
 
     buffer.force();
     return new Vocabulary(vocab);
   }
 
-  private static long spillPosting(long[] posting, LongBuffer buffer) {
-    final int postingSize = (int) posting[0];
-    long prevEntry = 0;
-
-    for (int i = 1; i <= postingSize; ++i) {
-      buffer.put(posting[i] - prevEntry);
-      prevEntry = posting[i];
-    }
-
-    return (long) postingSize << 3;
+  private static int spillPosting(long[] posting, ByteBuffer buffer) {
+    final int pos = buffer.position();
+    SpilledPosting.ENCODER.encode(LongBuffer.wrap(posting, 1, (int) posting[0]), buffer, true);
+    return buffer.position() - pos;
   }
 
   public static int docIdOf(long encoding) {

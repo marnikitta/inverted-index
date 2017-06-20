@@ -45,12 +45,12 @@ public final class SearchApplication {
     this.assertIntersect("peckham armitage baldwin", "wiki/wiki-part.xml.fk, wiki/wiki-part.xml.by, wiki/wiki-part.xml.bl, wiki/wiki-part.xml.fq, wiki/wiki-part.xml.yv, wiki/wiki-part.xml.wi, wiki/wiki-part.xml.zame");
   }
 
-  private void test2() throws IOException {
-    this.assertIntersect("wolseley monica chrisbarrie", "wiki/wiki-part.xml.zame");
+  private void test3() throws IOException {
+    this.assertIntersect("perspicillatus barrett browning sister henrietta died in november eclectic magazine", "wiki/wiki-part.xml.df");
   }
 
-  private void test3() throws IOException {
-    this.assertIntersect("again uses superlatives", "wiki/wiki-part.xml.bw, wiki/wiki-part.xml.mc, wiki/wiki-part.xml.qg, wiki/wiki-part.xml.of, wiki/wiki-part.xml.le, wiki/wiki-part.xml.my, wiki/wiki-part.xml.bo, wiki/wiki-part.xml.ix, wiki/wiki-part.xml.bs, wiki/wiki-part.xml.fw, wiki/wiki-part.xml.zame, wiki/wiki-part.xml.pz, wiki/wiki-part.xml.aa, wiki/wiki-part.xml.km, wiki/wiki-part.xml.df, wiki/wiki-part.xml.sv, wiki/wiki-part.xml.lo");
+  private void test2() throws IOException {
+    this.assertIntersect("wolseley monica chrisbarrie", "wiki/wiki-part.xml.zame");
   }
 
   private void test4() throws IOException {
