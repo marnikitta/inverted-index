@@ -28,14 +28,6 @@
         <url>https://github.com/marnikitta/inverted-index</url>
     </scm>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>wikiforia-parser</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>
