@@ -10,9 +10,10 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public final class FileIndexer {
-  private final Index index = new Index(Paths.get(""));
+  private final Indexer indexer = new Indexer(Paths.get(""));
   private final DocIder docIder = new DocIder();
 
   private final ByteBuffer buffer = ByteBuffer.allocateDirect(8192);
@@ -26,9 +27,8 @@ public final class FileIndexer {
     try (FileChannel fc = FileChannel.open(path)) {
       this.buffer.clear();
 
-      final int position = (int) fc.position();
-
       while (fc.read(this.buffer) > 0) {
+        final int filePosition = (int) (fc.position() - this.buffer.limit());
         this.buffer.flip();
 
         int start = 0;
@@ -42,7 +42,7 @@ public final class FileIndexer {
             if (pos > start && pos - start < 100) {
               this.slice.limit(pos).position(start);
               final CharBuffer word = this.decoder.decode(this.slice);
-              this.index.index(word, docId, position + start);
+              this.indexer.index(word, docId, filePosition + start);
             }
             start = pos + 1;
           }
@@ -50,6 +50,12 @@ public final class FileIndexer {
 
         this.buffer.clear();
       }
+    }
+  }
+
+  public void spillDocIds(Path path) throws IOException {
+    try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+      this.docIder.spill(channel, StandardCharsets.UTF_8.newEncoder());
     }
   }
 

@@ -1,6 +1,7 @@
 package marnikitta.ir.index.indexer;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,16 +16,18 @@ public final class IndexApplication {
   }
 
   public static void main(String... args) throws IOException {
-    System.out.println("Starting: " + System.currentTimeMillis());
+    System.out.println("Start: " + System.currentTimeMillis());
     final long start = System.currentTimeMillis();
-    final Path root = Paths.get("");
+
+    final Path root = Paths.get(args[0]);
 
     if (!Files.isDirectory(root)) {
       throw new IllegalArgumentException("First arg should be a path");
     }
     new IndexApplication(root).walkAndIndex();
+
     System.out.println(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - start));
-    System.out.println("Stopping: " + System.currentTimeMillis());
+    System.out.println("Stop: " + System.currentTimeMillis());
   }
 
   public void walkAndIndex() throws IOException {
@@ -32,9 +35,10 @@ public final class IndexApplication {
               try {
                 this.indexer.indexFile(p);
               } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
               }
             }
     );
+    this.indexer.spillDocIds(Paths.get("docIds.dcd"));
   }
 }

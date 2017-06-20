@@ -5,13 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class IndexChunk {
-  public static final int DOCID_OFFSET = 31;
-
   private int size = 0;
   private final Map<CharSequence, long[]> postings = new HashMap<>();
 
   public void append(CharSequence word, int docId, int position) {
-    final long encoding = this.encode(docId, position);
+    // TODO: 6/19/17 DOCID twice equal to 0
+    final long encoding = SpilledPosting.encode(docId, position);
     this.postings.compute(word, (w, p) -> IndexChunk.appendToPosting(p, encoding));
 
     this.size++;
@@ -39,9 +38,5 @@ public final class IndexChunk {
 
   public Map<CharSequence, long[]> postings() {
     return this.postings;
-  }
-
-  private long encode(int docId, int position) {
-    return ((long) docId << IndexChunk.DOCID_OFFSET) + position;
   }
 }

@@ -3,6 +3,7 @@ package marnikitta.ir.index.indexer;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.CharacterCodingException;
@@ -10,6 +11,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public final class Vocabulary {
   private static final int MAX_ENTRY_SIZE = 1 + 8 + 8 + 128;
@@ -20,12 +22,13 @@ public final class Vocabulary {
     this.vocabulary = vocabulary;
   }
 
-  public Map<CharSequence, PostingLocation> payload() {
-    return this.vocabulary;
-  };
+  public Optional<PostingLocation> get(CharSequence q) {
+    return Optional.ofNullable(this.vocabulary.get(q));
+  }
 
-  public void spill(FileChannel channel, CharsetEncoder encoder) {
+  public void spill(FileChannel channel, CharsetEncoder encoder) throws IOException {
     final ByteBuffer buffer = ByteBuffer.allocate(8192);
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
 
     this.vocabulary.forEach((c, p) -> {
       if (buffer.remaining() <= Vocabulary.MAX_ENTRY_SIZE) {
@@ -38,19 +41,28 @@ public final class Vocabulary {
         }
       }
 
-      final int lengthPlaceHolder = buffer.position();
-      buffer.put((byte) 0);
-      encoder.encode(CharBuffer.wrap(c), buffer, false);
-      final byte length = (byte) (buffer.position() - lengthPlaceHolder - 1);
-
-      buffer.put(lengthPlaceHolder, length);
-      buffer.putLong(this.vocabulary.get(c).offset);
-      buffer.putLong(this.vocabulary.get(c).length);
+      Vocabulary.putEntry(buffer, c, p, encoder);
     });
+
+    buffer.flip();
+    channel.write(buffer);
+    buffer.clear();
   }
 
-  public static Vocabulary load(FileChannel channel, CharsetDecoder decoder) throws IOException {
+  private static void putEntry(ByteBuffer buffer, CharSequence word, PostingLocation location, CharsetEncoder encoder) {
+    final int lengthPlaceHolder = buffer.position();
+    buffer.put((byte) 0);
+    encoder.encode(CharBuffer.wrap(word), buffer, false);
+    final byte length = (byte) (buffer.position() - lengthPlaceHolder - 1);
+
+    buffer.put(lengthPlaceHolder, length);
+    buffer.putLong(location.offset);
+    buffer.putLong(location.length);
+  }
+
+  public static Vocabulary loadFrom(FileChannel channel, CharsetDecoder decoder) throws IOException {
     final ByteBuffer buffer = ByteBuffer.allocate(8192);
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
     final ByteBuffer slice = buffer.asReadOnlyBuffer();
 
     final Map<CharSequence, PostingLocation> result = new HashMap<>();
@@ -85,6 +97,6 @@ public final class Vocabulary {
     final long offset = buffer.getLong();
     final long length = buffer.getLong();
 
-    destination.put(word, new PostingLocation(offset, length));
+    destination.put(word.toString(), new PostingLocation(offset, length));
   }
 }
