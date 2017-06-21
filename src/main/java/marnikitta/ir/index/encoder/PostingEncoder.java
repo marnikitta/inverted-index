@@ -19,7 +19,7 @@ public final class PostingEncoder {
     }
 
     if (spillLast && from.remaining() != 0) {
-      this.spillLast(to, from.get());
+      this.spillLast(to, from.get() - prevEntry);
     }
   }
 

@@ -46,7 +46,7 @@ public final class SearchApplication {
   }
 
   private void test3() throws IOException {
-    this.assertIntersect("perspicillatus barrett browning sister henrietta died in november eclectic magazine", "wiki/wiki-part.xml.df");
+    this.assertIntersect("phalacrocorax perspicillatus barrett browning sister henrietta died in november eclectic magazine", "wiki/wiki-part.xml.df");
   }
 
   private void test2() throws IOException {

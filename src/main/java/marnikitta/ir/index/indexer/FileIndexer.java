@@ -27,28 +27,32 @@ public final class FileIndexer {
     try (FileChannel fc = FileChannel.open(path)) {
       this.buffer.clear();
 
+      int left = 0;
       while (fc.read(this.buffer) > 0) {
-        final int filePosition = (int) (fc.position() - this.buffer.limit());
         this.buffer.flip();
+        final int filePosition = (int) (fc.position() - this.buffer.limit() - left);
 
-        int start = 0;
+        int startPosition = 0;
         while (this.buffer.hasRemaining()) {
           final byte current = this.buffer.get();
 
           if (FileIndexer.isValidChar(current)) {
-            this.buffer.put(this.buffer.position() - 1, current >= 'A' && current <= 'Z' ? (byte) (current - (byte) 'A' + (byte) 'a') : current);
+            this.buffer.put(this.buffer.position() - 1, FileIndexer.lowerCase(current));
           } else {
-            final int pos = this.buffer.position() - 1;
-            if (pos > start && pos - start < 100) {
-              this.slice.limit(pos).position(start);
+            final int endPosition = this.buffer.position() - 1;
+            if (endPosition > startPosition && endPosition - startPosition < 100) {
+              this.slice.limit(endPosition).position(startPosition);
               final CharBuffer word = this.decoder.decode(this.slice);
-              this.indexer.index(word, docId, filePosition + start);
+              this.indexer.index(word, docId, filePosition + startPosition);
             }
-            start = pos + 1;
+
+            this.buffer.mark();
+            startPosition = this.buffer.position();
           }
         }
-
-        this.buffer.clear();
+        this.buffer.reset();
+        left = this.buffer.remaining();
+        this.buffer.compact();
       }
     }
   }
@@ -57,6 +61,10 @@ public final class FileIndexer {
     try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
       this.docIder.spill(channel, StandardCharsets.UTF_8.newEncoder());
     }
+  }
+
+  private static byte lowerCase(byte symbol) {
+    return symbol >= 'A' && symbol <= 'Z' ? (byte) (symbol - (byte) 'A' + (byte) 'a') : symbol;
   }
 
   private static boolean isValidChar(byte current) {

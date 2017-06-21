@@ -22,6 +22,7 @@ public final class Indexer {
     }
 
     this.currentIndex.append(word, docId, position);
+    // TODO: 6/21/17 spill last chunk
   }
 
   private void rotate() throws IOException {
