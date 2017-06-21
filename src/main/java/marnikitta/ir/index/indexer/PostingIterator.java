@@ -9,9 +9,8 @@ import java.nio.channels.FileChannel;
 import java.util.NoSuchElementException;
 
 public final class PostingIterator {
-  public static final int MAX_BLOCK_LENGTH = 30;
-
   private final FileChannel channel;
+
   private final ByteBuffer buffer = ByteBuffer.allocate(8192);
   private final LongBuffer longBuffer = LongBuffer.allocate(8192);
   private final PostingDecoder decoder = new PostingDecoder();
